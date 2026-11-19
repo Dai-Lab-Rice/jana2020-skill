@@ -1,0 +1,48 @@
+Version Jana2020
+title MnTe_340K_Template
+cell 4.1522 4.1522 6.7162 90 90 120
+esdcell 0.0005 0.0005 0.0011 0 0 0
+spgroup P63/mmc 194 6
+lattice P
+symmetry x y z
+symmetry -y x-y z
+symmetry -x+y -x z
+symmetry -x -y z+1/2
+symmetry y -x+y z+1/2
+symmetry x-y x z+1/2
+symmetry y x -z
+symmetry x-y -y -z
+symmetry -x -x+y -z
+symmetry -y -x -z+1/2
+symmetry -x+y y -z+1/2
+symmetry x x-y -z+1/2
+symmetry -x -y -z
+symmetry y -x+y -z
+symmetry x-y x -z
+symmetry x y -z+1/2
+symmetry -y x-y -z+1/2
+symmetry -x+y -x -z+1/2
+symmetry -y -x z
+symmetry -x+y y z
+symmetry x x-y z
+symmetry y x z+1/2
+symmetry x-y -y z+1/2
+symmetry -x -x+y z+1/2
+unitsnumb 2
+atlist Mn Te
+formtab -62
+atom Mn atradius 1.37 color 168008158 donor 0 acceptor 0
+atom Te atradius 1.37 color 173162081 donor 0 acceptor 0
+roundmethod 1 autrefkeys 1
+end
+*******************************************************************************
+refine
+  cycles 100 damp 0.2
+  iext 1 itypex 1 idistr 1 radius 0.01
+end refine
+fourier
+end fourier
+dist
+end dist
+contour
+end contour
