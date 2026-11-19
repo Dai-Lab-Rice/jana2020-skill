@@ -2,13 +2,13 @@
 
 A modular, version-controlled AI Agent Skill for pair-programming crystallographic refinements in **Jana2020** (and **Jana2006**), covering both single-crystal X-ray diffraction and time-of-flight (TOF) neutron diffraction (e.g., ORNL SNS TOPAZ / Corelli).
 
-Because `Jana2020.exe` is an interactive GUI Fortran application without headless command-line batch execution, this skill establishes a streamlined **Human-in-the-Loop + Agent File Engineering** workflow:
+Because `Jana2020.exe` is an interactive GUI Fortran application without headless command-line batch execution, this skill establishes a streamlined **Native GUI automation + Agent File Engineering** workflow:
 
-1. **Phase 1 — Importing Reflection Data (User-Guided GUI)**:
-   - Guides the user step-by-step through the *actual, verified* Jana2020 Import Wizard dialogs and buttons to generate `.m95` and `.m90` reflection files without triggering `READCIF` Fortran crashes.
+1. **Phase 1 — Importing Reflection Data (Native GUI Controls)**:
+   - Uses native control automation, with user-guided fallback when needed, through the *actual, verified* Jana2020 Import Wizard dialogs and buttons to generate `.m95` and `.m90` reflection files without triggering `READCIF` Fortran crashes.
 2. **Phase 2 — Structure Setup, Refinement & Diagnostics (Agent File Engineering)**:
    - Directly constructs and modifies `.m50` (symmetry, scattering tables, extinction, constraint equations), `.m40` (atomic coordinates, site multiplicities, 10-digit refinement flags), and `.m90` (wavelength/$d$-spacing cutoffs) on disk.
-   - Guides the user around Jana2020's in-memory state caching so disk edits are cleanly loaded.
+   - Reloads edited projects to avoid Jana2020's in-memory state caching so disk edits are cleanly loaded.
    - Provides automated Python utilities to parse `.ref` and `.m40` outputs, inspect 3D Difference Fourier binary maps (`.m81`), and diagnose secondary extinction across wavelength (`.m83` + `.hkl`).
 
 ---
@@ -56,3 +56,7 @@ C:\Users\hplfz\miniconda3\python.exe scripts/analyze_fourier_m81.py path/to/proj
 # 5. Plot normalized intensity ratios (Iobs/Icalc) vs wavelength (PNG)
 C:\Users\hplfz\miniconda3\python.exe scripts/plot_extinction_wavelength.py --hkl data.hkl --m83 project.m83 --out-png wavelength_dependence.png
 ```
+
+## Validated helper boundaries
+
+See `SKILL.md` and the format reference for supported layouts. Chemical site fractions require an explicit occupancy multiplier. Repeated hkl requires a verified sequence-keyed observation map. Legacy editing/filtering refuses unsupported multi-phase or multi-block input before writing. Joint datasets and measurement diagnostics have dedicated references.

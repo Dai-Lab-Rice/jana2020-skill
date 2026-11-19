@@ -25,6 +25,8 @@ import argparse
 import os
 import re
 import sys
+import math
+from observation_mapping import legacy_m40
 
 
 def update_m40(m40_path, flag_updates=None, occ_updates=None, pos_updates=None, ext_flag=None):
@@ -32,6 +34,7 @@ def update_m40(m40_path, flag_updates=None, occ_updates=None, pos_updates=None, 
     with open(m40_path, 'r', errors='ignore') as f:
         lines = f.readlines()
 
+    legacy_m40(lines)
     su_idx = len(lines)
     for i, l in enumerate(lines):
         if 's.u. block' in l:
@@ -53,7 +56,7 @@ def update_m40(m40_path, flag_updates=None, occ_updates=None, pos_updates=None, 
         line = lines[i].strip()
         if not line or line.startswith('----'):
             break
-        parts = line.split()
+        parts = re.sub(r'(?<=\d)(?=[+-]\d*\.)', ' ', line).split()
         if len(parts) >= 7 and not parts[0][0].isdigit() and not parts[0].startswith('-'):
             tag = parts[0]
             type_idx = int(parts[1])
@@ -66,17 +69,15 @@ def update_m40(m40_path, flag_updates=None, occ_updates=None, pos_updates=None, 
             if tag in pos_updates:
                 x, y, z = pos_updates[tag]
 
-            lines[i] = f"{tag:<10}{type_idx:1d}  {adp_mode:1d}     {ai:8.6f} {x:8.6f} {y:8.6f} {z:8.6f}\n"
+            values=(ai,x,y,z)
+            if not all(math.isfinite(v) and len(f'{v:9.6f}')==9 for v in values):
+                raise ValueError('Nonfinite or overflowing fixed-width parameter')
+            lines[i] = lines[i][:18] + ''.join(f'{v:9.6f}' for v in values) + lines[i][54:]
 
             if i + 1 < su_idx and tag in flag_updates:
-                adp_parts = lines[i + 1].split()
-                if len(adp_parts) >= 7:
-                    u_vals = [float(v) for v in adp_parts[:6]]
-                    new_flag = flag_updates[tag]
-                    lines[i + 1] = (
-                        f" {u_vals[0]:8.6f} {u_vals[1]:8.6f} {u_vals[2]:8.6f} "
-                        f"{u_vals[3]:8.6f} {u_vals[4]:8.6f} {u_vals[5]:8.6f}      {new_flag}\n"
-                    )
+                new_flag = flag_updates[tag]
+                if not re.fullmatch(r'[01]{10}',new_flag):raise ValueError('Expected ten binary flags')
+                lines[i+1]=lines[i+1][:60]+new_flag+lines[i+1][70:]
             i += 2
         else:
             i += 1
@@ -90,43 +91,25 @@ def update_m50(m50_path, iext_line=None, clear_equations=False, add_equations=No
     with open(m50_path, 'r', errors='ignore') as f:
         lines = f.readlines()
 
-    new_lines = []
-    in_refine = False
-    existing_equations = []
-    cycles_line = "  cycles 100 damp 0.2\n"
-    cur_iext_line = "  iext 1 itypex 1 idistr 1 radius 0.01\n"
+    validate_m50(lines)
+    new_lines=[];inside=False;seen=False
+    for line in lines:
+        s=line.strip()
+        if s=='refine':inside=True
+        if inside and s.startswith('iext') and iext_line is not None:
+            new_lines.append(iext_line);seen=True;continue
+        if inside and s.startswith('equation') and clear_equations:continue
+        if s=='end refine':
+            if iext_line is not None and not seen:new_lines.append(iext_line)
+            for eq in add_equations or []:new_lines.append('  equation : '+eq+'\n')
+            inside=False
+        new_lines.append(line)
+    with open(m50_path,'w') as f:f.writelines(new_lines)
 
-    for l in lines:
-        stripped = l.strip()
-        if stripped == 'refine':
-            in_refine = True
-            new_lines.append(l)
-            continue
-        if stripped == 'end refine':
-            in_refine = False
-            new_lines.append(cycles_line)
-            new_lines.append(iext_line if iext_line is not None else cur_iext_line)
-            if not clear_equations:
-                for eq in existing_equations:
-                    new_lines.append(eq)
-            if add_equations:
-                for eq in add_equations:
-                    new_lines.append(f"  equation : {eq}\n")
-            new_lines.append(l)
-            continue
-
-        if in_refine:
-            if stripped.startswith('cycles'):
-                cycles_line = l
-            elif stripped.startswith('iext'):
-                cur_iext_line = l
-            elif stripped.startswith('equation'):
-                existing_equations.append(l)
-        else:
-            new_lines.append(l)
-
-    with open(m50_path, 'w') as f:
-        f.writelines(new_lines)
+def validate_m50(lines):
+    text=''.join(lines)
+    if text.count('\nrefine\n')!=1 or any(line.strip().startswith(('phase','extlabel','twin')) for line in lines):
+        raise ValueError('Legacy editor rejects multi-phase/domain or dataset-specific layouts')
 
 
 def main():
@@ -145,6 +128,11 @@ def main():
     m40_path = base + ".m40"
     m50_path = base + ".m50"
 
+    # Validate both project files before either can be changed.
+    if os.path.exists(m40_path):
+        with open(m40_path) as f:legacy_m40(f.read().splitlines())
+    if os.path.exists(m50_path):
+        with open(m50_path) as f:validate_m50(f.readlines())
     flag_updates = dict(item.split("=", 1) for item in args.set_flag)
     occ_updates = {k: float(v) for k, v in (item.split("=", 1) for item in args.set_occ)}
     pos_updates = {
