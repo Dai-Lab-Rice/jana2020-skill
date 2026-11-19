@@ -10,7 +10,7 @@ This reference documents critical numerical, GUI, and physical pitfalls encounte
 You remove an `equation : ...` line from `.m50` on disk (for example, transitioning from a substitutional model on site $2a$ where `occ[Li1]=0.083333-occ[Mn1]` to an unconstrained interstitial model on site $2d$ where `Mn1` is fixed at `0.083333`), and set `Li1`'s refinement flag in `.m40` to `1000000000`. The user clicks `Refinement -> Run refinement` in Jana2020, and `occ[Li1]` immediately jumps to `0.000000` with its refinement flag reset to `0000000000`!
 
 ### Root Cause
-While a project remains open in the Jana2020 GUI, Jana holds its `refine` command tree—especially **user equations** and **extinction flags**—in RAM. Clicking `Refinement -> Run refinement` does **not** re-read `.m50` from disk; instead, Jana writes its in-memory equations back out to `.ref` and `.m50` before starting `REFINE`.
+While a project remains open in the Jana2020 GUI, Jana holds its `refine` command treeâ€”especially **user equations** and **extinction flags**â€”in RAM. Clicking `Refinement -> Run refinement` does **not** re-read `.m50` from disk; instead, Jana writes its in-memory equations back out to `.ref` and `.m50` before starting `REFINE`.
 In `.ref`, you will see:
 ```text
 =>equation : occ[Li1]=0.083333-occ[Mn1]<=
@@ -18,14 +18,12 @@ In `.ref`, you will see:
 ```
 
 ### Mandatory Prevention & Verification
-1. **Before running refinement after any `.m50` change**, always instruct the user to either:
-   - Re-open the project via **`File -> Open`** and select `<project>.m50` (forces Jana to discard RAM state and reload `.m50` and `.m40` from disk), **OR**
-   - Open **`Refinement -> Refinement Commands -> Equations`**, click **`Delete all`**, and click **`OK`**.
-2. **After every refinement**, grep the top of `.ref` for `=>equation` to verify that only intended equations were active!
+1. Reopen the edited project through the verified native Open command; clearing equations alone does not reload extinction or other settings. Prefer automation over requiring user clicks.
+2. Verify the full project path and the active equations/settings in the new listing.
 
 ---
 
-## Pitfall 2: Scale–Sublattice Occupancy Singularity & The Circular Fit Trap
+## Pitfall 2: Scaleâ€“Sublattice Occupancy Singularity & The Circular Fit Trap
 
 ### Symptom
 In a binary crystal $AB$ (or pseudo-binary $(A_{1-x}D_x)B$), you flag the overall scale factor $K$, the cation site occupancy (`occ[Mn1]` with `occ[Li1] = 0.083333 - occ[Mn1]`), **and** the anion site occupancy (`occ[Te1]`) to refine simultaneously.
@@ -42,15 +40,15 @@ In the cycle #1 there was one singularity:
 ```
 And in the `.m40` `s.u. block`, `Te1` has an unphysical s.u. (such as `3.879057`) or `0.000000` in `.ref`!
 
-### Mathematical Explanation
-Bragg diffraction intensities $I(\mathbf{h}) \propto K^2 |F(\mathbf{h})|^2$ provide only **two** macroscopic intensity observables across the two sublattices:
-1. The overall scale factor $K^2$.
-2. The single scalar ratio of sublattice scattering powers:
-   $$\mathcal{R} = \frac{\Sigma b_{\text{anion}}}{\Sigma b_{\text{cation}}} = \frac{\text{occ}(\text{Te}) \cdot b_{\text{Te}}}{\text{occ}(\text{Mn}) \cdot b_{\text{Mn}} + \text{occ}(\text{Li}) \cdot b_{\text{Li}}}$$
-Because there is **one** contrast ratio $\mathcal{R}$ and **two** compositional degrees of freedom ($\text{occ}(\text{Te})$ and $x_{\text{Li}}$), the normal matrix is singular ($\det = 0$).
-- When Jana encounters this singularity in Cycle #1, it **blocks (freezes) `occ[Te1]` at its initial input value** and refines `occ[Mn1]` against it.
-- If your initial input value for `occ[Te1]` ($0.947$) was obtained from an earlier trial where Li was fixed at $3.0\%$, then refining Li against that frozen $\text{Te} = 0.947$ **must mathematically return $\text{Li} = 3.0\%$**!
-- **Rule**: Never claim that co-axial cation substitution and anion vacancy were refined independently when a singularity blocked one of them. Only an atom at a **third, spatially distinct Wyckoff position** (such as interstitial $2d$ or $4f$, which introduces $l$-dependent phase factors $\cos(2\pi l z)$) breaks the collinearity and allows both interstitial Li and host Te occupancies to refine simultaneously without singularity.
+### Identifiability
+
+A global change in all site scattering powers can be exchanged against scale.
+Co-located species with real, constant neutron scattering lengths and identical
+ADPs have proportional occupancy derivatives. Additional coordinates or species
+do not automatically make a model identifiable. Check the actual derivative rank,
+blocked parameters, correlations, contrast and fitted constraints. A parameter
+frozen at a value from a previous fit is not independently redetermined.
+Use justified site-sum/composition constraints or additional independent contrast.
 
 ---
 
@@ -90,4 +88,4 @@ This has two major consequences in Jana2020 refinements:
 ### 2. Antisite Defect Refinements ($\text{Te}_{\text{Mn}}$ vs. $\text{Mn}_{\text{Te}}$)
 - Substituting Te ($+5.80\text{ fm}$) onto a Mn site ($-3.73\text{ fm}$) produces an enormous contrast change of $\Delta b = +9.53\text{ fm}$ per atom:
   $$b_{\text{site}}(2a) = (1 - x)(-3.73) + x(+5.80) = -3.73 + 9.53 x$$
-- If the experimental diffraction data requires the cation sublattice to have *more* negative scattering power relative to Te (e.g., $b_{\text{site}} = -3.87\text{ fm}$ due to interstitial Mn or Te deficiency), a $\text{Te}_{\text{Mn}}$ antisite model (`equation : occ[Te2]=0.083333-occ[Mn1]`) will refine $x$ to a **statistically significant negative occupancy** (e.g. $x = -1.44(14)\%$, $-10.4\sigma$). A negative refined occupancy under a valid site-sum constraint is a definitive statistical rejection of that antisite defect.
+- If the experimental diffraction data requires the cation sublattice to have *more* negative scattering power relative to Te (e.g., $b_{\text{site}} = -3.87\text{ fm}$ due to interstitial Mn or Te deficiency), a $\text{Te}_{\text{Mn}}$ antisite model (`equation : occ[Te2]=0.083333-occ[Mn1]`) will refine $x$ to a **statistically significant negative occupancy** (e.g. $x = -1.44(14)\%$, $-10.4\sigma$). A negative refined occupancy under a valid site-sum constraint is incompatible with that constrained model under its assumptions. Investigate systematic errors, weighting, contrast and model misspecification before claiming a physical defect has been definitively excluded.

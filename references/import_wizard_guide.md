@@ -1,6 +1,6 @@
 # Jana2020 Verified Import Wizard & GUI Navigation Guide
 
-AI agents frequently guess or hallucinate Jana2020 menu names and wizard prompts based on generic crystallography software (like SHELXL, FullProf, or Olex2). Every dialog title, radio button, checkbox, and menu path in this guide has been **verified against the live Jana2020 GUI**.
+AI agents frequently guess or hallucinate Jana2020 menu names and wizard prompts based on generic crystallography software (like SHELXL, FullProf, or Olex2). These labels were observed in particular imports/builds. Inspect live text controls before use; menu paths and prompt ordering can differ. Prefer the pywinauto workflow over asking the user to perform routine clicks.
 
 ---
 
@@ -9,7 +9,7 @@ AI agents frequently guess or hallucinate Jana2020 menu names and wizard prompts
 When starting from a raw reflection file (such as a 22-column ORNL SNS TOPAZ / Corelli Mantid `.hkl` file), guide the user through these exact steps:
 
 ### Step 1: Create a New Structure
-1. Open **Jana2020** $\rightarrow$ click **`File -> Structure -> New`** (or `File -> New structure`).
+1. Open **Jana2020** $\rightarrow$ click the discovered native **Structure → New** command (verify the current menu).
 2. Browse to the target project directory and type the structure name (e.g., `MnTe_340K`).
 
 ### Step 2: Select Reflection Format Type
@@ -30,17 +30,17 @@ When starting from a raw reflection file (such as a 22-column ORNL SNS TOPAZ / C
 ### Step 5: Derived Lattice Parameters, Twins & Data Repository
 1. Jana displays the lattice parameters and `"derived lattice parameters from actual"` and asks if there are any twins.
 2. Instruct the user to click **`Next`**, then **`Next`** again.
-3. Jana shows the **`"Data repository"`** table listing `(File, Type of data, Used radiation)` — e.g., `(MnTe_*.hkl, Single crystal, Neutrons TOF)`.
+3. Jana shows the **`"Data repository"`** table listing `(File, Type of data, Used radiation)` â€” e.g., `(MnTe_*.hkl, Single crystal, Neutrons TOF)`.
 4. Click **`OK`** (or **`Next`**).
 
 ### Step 6: Create Refinement Reflection File (`.m90`)
 Jana opens the reflection file creation dialog:
 - **Unobserved threshold**: `Reflections I < [ 3 ] * sig(I) will be sorted as unobserved.` (Set to `3`).
 - **Checkboxes**:
-  - **`[x] use in output file E-format (recommended for data with large dynamical range)`** — **ALWAYS CHECK THIS** for TOF neutron data! TOF reflections span many orders of magnitude; leaving E-format unchecked can cause `******` fixed-point format overflows in `.m90`.
+  - **`[x] use in output file E-format (recommended for data with large dynamical range)`** â€” **ALWAYS CHECK THIS** for TOF neutron data! TOF reflections span many orders of magnitude; leaving E-format unchecked can cause `******` fixed-point format overflows in `.m90`.
   - **`[ ] run in silent mode`**
 - Click **`OK`** / **`Next`**.
-- Jana reports the number of reflections read and written (e.g., `1462/1472 reflections read / written, no rejections due to systematic extinctions` — zero rejections occur here because the space group is still $P1$ during initial import).
+- Jana reports the number of reflections read and written (e.g., `1462/1472 reflections read / written, no rejections due to systematic extinctions` â€” zero rejections occur here because the space group is still $P1$ during initial import).
 
 ### Step 7: Accept the DatBlock
 Jana presents three radio buttons:
@@ -59,20 +59,20 @@ Jana presents three radio buttons:
 ## 2. Why CIF Import Crashes (`READCIF` Error 59) & How to Bypass It
 
 ### The Crash
-If the user tries to import a `.cif` file that contains standard uncertainties in parentheses (such as `_cell_length_a 4.1532(3)` or atomic coordinate s.u.'s), Jana2020's Fortran CIF parser (`ReadCIF.f90`) crashes with:
+If the user tries to import a `.cif` file that contains standard uncertainties in parentheses (such as `_cell_length_a 4.1532(3)` or atomic coordinate s.u.'s), an observed Jana2020 build failed in its Fortran CIF parser (`ReadCIF.f90`) with:
 ```text
 forrtl: severe (59): list-directed I/O syntax error, unit -5, file Internal List-Directed Read
 Routine: READCIF (ReadCIF.f90)
 ```
 Even if a stripped CIF is imported via **`Import -> model from CIF`**, Jana prompts an `"Import model"` dialog with two radio options:
-- `Transform the model into the current cell` (must be chosen to preserve reflection indexing)
+- `Transform the model into the current cell` (appropriate when the current cell/indexing is the intended setting; verify the basis/origin mapping)
 - `Transform reflections files into the imported cell`
 
 ### Recommended Agent Bypass (Zero-Click Structure Setup)
-Once the user completes **Step 7–8** of the Import Wizard above, Jana has **already written `<project>.m95` and `<project>.m90` to disk**!
+Once the user completes **Step 7â€“8** of the Import Wizard above, Jana has **already written `<project>.m95` and `<project>.m90` to disk**!
 Instead of making the user import a CIF or manually add atoms in the GUI:
 1. Write the complete `<project>.m50` (with space group symmetry cards, `atlist`, and `formtab -62` for neutrons) and `<project>.m40` (with atomic positions, occupancies, and refinement flags) directly to disk.
-2. Have the user open `<project>.m50` via **`File -> Open`** (and if symmetry was changed from $P1$, click `Reflection file -> Create refinement reflection file` or accept the automatic prompt to re-create `.m90` with systematic extinctions filtered).
+2. Have the user open `<project>.m50` via the discovered native **Structure → Open** command (and if symmetry was changed from $P1$, click `Reflection file -> Create refinement reflection file` audit any automatic re-creation settings; retain candidate-forbidden observations for symmetry diagnostics rather than silently filtering them).
 
 ---
 

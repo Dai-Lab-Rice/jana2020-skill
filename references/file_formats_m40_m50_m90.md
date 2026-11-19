@@ -72,13 +72,13 @@ end contour
 - **`atlist <El1> <El2> ...`**: Defines the 1-based integer chemical type index (`TypeIdx`) used in `.m40` (`1` = `El1`, `2` = `El2`, `3` = `El3`, etc.).
 - **`unitsnumb <Z>`**: Formula units per unit cell ($Z$).
 - **`iext` (Extinction directive inside `refine ... end refine`)**:
-  - `iext 0`: Extinction turned OFF. (Also set the extinction refinement flag on Line 5 of `.m40` to `000000`).
+  - `iext 0`: Extinction turned OFF. (Also set the actual extinction refinement flag in `.m40` to `000000`).
   - `iext 1 itypex 1 idistr 1 radius 0.01`: **Isotropic Becker-Coppens** (`iext 1`), Type 1 mosaic-spread dominated (`itypex 1`; use `2` for Type 2 particle-size dominated), Gaussian mosaic distribution (`idistr 1`; use `2` for Lorentzian), crystal radius in cm (`radius 0.01`).
   - `iext 2 itypex 1 idistr 1 radius 0.01`: **Anisotropic Becker-Coppens** (`iext 2`).
 - **`equation : <lhs>=<rhs>`**:
   - Constrains dependent parameters during least-squares refinement.
   - Common parameter names: `occ[AtomName]`, `x[AtomName]`, `y[AtomName]`, `z[AtomName]`, `u11[AtomName]`, `u22[AtomName]`, `u33[AtomName]`, `u12[AtomName]`, `u13[AtomName]`, `u23[AtomName]`, `uiso[AtomName]`.
-  - **CRITICAL EQUATION SCALING RULE**: `occ[AtomName]` in an equation refers to the raw crystallographic occupancy $a_i = f_{\text{site}} \times \frac{M_{\text{site}}}{N_{\text{sym}}}$ stored in `.m40`, **NOT** $1.0$!
+  - **CRITICAL EQUATION SCALING RULE**: `occ[AtomName]` in an equation refers to the raw crystallographic occupancy $a_i = f_{\text{site}} \times \frac{M_{\text{site}}}{N_{\text{sym}}}$ stored in `.m40`, **NOT** a universal chemical fraction!
     - On a 2-fold site ($M_{\text{site}} = 2$) in $P6_3/mmc$ ($N_{\text{sym}} = 24$), full site occupancy is $2/24 = 0.083333$.
     - Therefore, $\text{occ}(\text{Mn1}) + \text{occ}(\text{Li1}) = 1$ **must** be written as:
       `equation : occ[Li1]=0.083333-occ[Mn1]`
@@ -86,6 +86,12 @@ end contour
 ---
 
 ## 2. The `.m40` File (Parameters, Flags & `s.u. block`)
+
+### Layout checks before editing
+
+The example below is a single-scale layout, not a universal line-number specification. Preserve any imported `commands`, `maxsc N`, `end` preamble and all detector-scale rows and their matching s.u. rows. A CORELLI import with `maxsc 60` used ten rows of six scale values. Determine the actual layout before indexing extinction or atom records.
+
+Atom records use a fixed ten-character name field immediately followed by the type index, for example `f"{name:<10}{type_idx}..."`. Tokenization helps analysis but is insufficient to validate output column placement. An extra space before the type index caused Jana to read type zero. Validate generated files by reopening them in Jana before refinement.
 
 ### Annotated `.m40` Example
 ```text
@@ -164,7 +170,7 @@ Li1                0.001100 0.000000 0.000000 0.015910
 
 ### Parsing the `s.u. block` (Column Offset Warning!)
 Below `--------------------------   s.u. block   --------------------------------------`:
-- Lines 1–4 give the s.u.'s of the global parameters (Line 1 Token 0 = $\sigma(\text{scale1})$; Line 4 Token 0 = $\sigma(G_{\text{iso}})$).
+- Lines 1â€“4 give the s.u.'s of the global parameters (Line 1 Token 0 = $\sigma(\text{scale1})$; Line 4 Token 0 = $\sigma(G_{\text{iso}})$).
 - For each atom, Line A has **5 whitespace-separated tokens** (unlike the 7 tokens in the main block because `TypeIdx` and `ADPMode` are integers without uncertainties):
   ```text
   Te1                0.000290 0.000000 0.000000 0.000000
@@ -178,27 +184,56 @@ Below `--------------------------   s.u. block   -------------------------------
 
 ---
 
-## 3. The `.m90` File (Refinement Reflections & Wavelength Cutoffs)
 
-- The `.m90` file header contains a line starting with `nref <N_total>` specifying the exact count of reflection lines after the `Data  1` marker.
-- Each reflection line in `Data  1` ends with a sequential integer tag formatted as:
-  $$\text{Tag}_k = 1000 \times k + 1 \quad (k = 1, 2, \dots, N_{\text{total}})$$
-  i.e., `1001`, `2001`, `3001`, ...
-- When filtering reflections by TOF wavelength $\lambda$ or $d$-spacing (by matching $(h,k,l)$ and intensity against the 22-column Mantid `.hkl` file where `parts[18]` is $\lambda$ and `parts[19]` is $d$), you **must**:
-  1. Re-number the trailing integer on each surviving line as `idx * 1000 + 1` (for `idx = 1..N_surviving`).
-  2. Update `nref <N_surviving>` in the `.m90` header.
-  - Use [scripts/filter_m90_wavelength.py](../scripts/filter_m90_wavelength.py) to perform this safely.
+## 3. Reflection identity and verified layouts
 
----
+Scale groups, data blocks, domains and phase selectors are distinct concepts.
+A six-value scale row does not prove six independently refined scales; inspect
+flags, group assignments and native listing. Jana amplitude scale s corresponds
+to intensity factor s². Relative intensity normalization uses (s_run/s_ref)².
 
-## 4. The `.m83` File (Observed vs. Calculated Structure Factors)
+In verified single and joint SXD files, a trailing tag is 1000*sequence+block_id.
+The low digits identify the data block, not the run or domain. Confirm the actual
+convention before reindexing. Multi-block headers/counts and explicit domain fields
+must remain consistent. Never concatenate blocks under one count or reuse a
+single-block filter for a joint dataset.
 
-Plaintext file generated during refinement containing one line per reflection:
-- `parts[0], parts[1], parts[2]`: $h, k, l$ (integers)
-- `parts[9]`: $F_{\text{obs}}^2$ (or observed intensity/structure factor on scale)
-- `parts[10]`: $F_{\text{calc}}^2$ (calculated intensity/structure factor)
-- `parts[11]`: $\sigma(F_{\text{obs}}^2)$
-- Match $(h,k,l)$ with the Mantid `.hkl` file (`parts[18]` = $\lambda$, `parts[19]` = $d$, `parts[16]` = $\bar{t}$) to analyze $I_{\text{obs}} / I_{\text{calc}}$ across wavelength and $d$-spacing.
+For the verified SXD E-format M90 record (zero-based slices): hkl [0:12], I
+[12:27], sigma [27:42], scale [42:46], flag [46:50], domain [50:54], Tbar
+[54:62], wavelength [62:70], six direction cosines [70:118], then trailing
+fields/tag. Whitespace tokens 8 and 9 are Tbar and wavelength respectively.
+In the observed non-E variant Tbar was [42:50]. These are importer/build-specific
+layouts, not Mantid or universal Jana specifications. Validate representative
+records and native settings rather than changing a header to claim E-format.
+
+Probe an importer only in an isolated, structurally consistent repository.
+Full-sized sentinel tests can verify field placement; a tiny reflection file
+paired with stale master counts may fail. Reject NaN/Inf direction cosines,
+overflow stars, count mismatches or ambiguous IDs even when an import completes.
+
+## 4. M83 amplitudes versus intensities
+
+In the verified SXD M83 output, zero-based tokens 9, 10, 11 are Fo, Fc and
+sigma(Fo), NOT their squares. Token 8 is native residual D, token 7 is data
+block, and the trailing observation tag joins the original measurement. Confirm
+these meanings by reconstructing native R1 and relating Fo²/Fc² to input I and
+active amplitude scales. An intensity ratio is (Fo/Fc)²; an amplitude ratio is
+Fo/Fc. Do not interchange sigma(Fo) and sigma(I). Extinction changes the relation
+to uncorrected input intensity, so validate it for the active model.
+
+Legacy diagnostic CLI: `--hkl` remains a Mantid 22-column input (zero-based
+wavelength token 18, d token 19). Unique hkl matching is permitted only when both
+sides are unique. Repeated hkl requires `--observations map.csv` with columns
+`sequence,h,k,l,wavelength_A,d_A`; sequence is the full native trailing tag.
+Build that map from verified import provenance, not arbitrary row enumeration.
+Missing/duplicate IDs, mismatched hkl and unsupported multiple blocks fail before
+output. The legacy filter rejects multi-block inputs and in-place writes.
+
+The parser reports raw ai by default; `--mult` explicitly supplies Nsym/Msite
+only for a model where that conversion is appropriate for all reported atoms.
+Mixed multiplicities require per-site interpretation outside the legacy helper.
+Legacy parser/editor M40 support is single-phase, single-scale, no preamble;
+complex layouts must be handled by validated layout-aware code, not guessed offsets.
 
 ---
 
