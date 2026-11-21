@@ -42,21 +42,33 @@ All scripts are designed for Python 3 (`numpy`, `matplotlib`):
 
 ```powershell
 # 1. Parse a single refinement directory or compare an entire tree of trials
-C:\Users\hplfz\miniconda3\python.exe scripts/parse_jana_ref.py path/to/refinement_dir --mult 12
+python scripts/parse_jana_ref.py path/to/refinement_dir --mult 12
 
 # 2. Modify atom flags, occupancies, or equations in .m40 / .m50
-C:\Users\hplfz\miniconda3\python.exe scripts/edit_jana_files.py path/to/project.m40 --set-flag Te1=1000101000
+python scripts/edit_jana_files.py path/to/project.m40 --set-flag Te1=1000101000
 
 # 3. Filter a TOF .m90 file by maximum wavelength (e.g. lambda <= 1.8 A)
-C:\Users\hplfz\miniconda3\python.exe scripts/filter_m90_wavelength.py --hkl data.hkl --m90-in orig.m90 --m90-out active.m90 --max-lambda 1.8
+python scripts/filter_m90_wavelength.py --hkl data.hkl --hkl-layout sns-tof-hkl --m90-in orig.m90 --m90-out subset.m90 --max-lambda 1.8
 
 # 4. Analyze a 3D Difference Fourier map (.m81) and plot 2D contour slices (PNG)
-C:\Users\hplfz\miniconda3\python.exe scripts/analyze_fourier_m81.py path/to/project.m81 --nx 42 --ny 42 --nz 67 --out-png fourier_slices.png
+python scripts/analyze_fourier_m81.py path/to/project.m81 --nx 42 --ny 42 --nz 67 --out-png fourier_slices.png
 
 # 5. Plot normalized intensity ratios (Iobs/Icalc) vs wavelength (PNG)
-C:\Users\hplfz\miniconda3\python.exe scripts/plot_extinction_wavelength.py --hkl data.hkl --m83 project.m83 --out-png wavelength_dependence.png
+python scripts/plot_extinction_wavelength.py --hkl data.hkl --hkl-layout sns-tof-hkl --m83 project.m83 --out-png wavelength_dependence.png
 ```
 
 ## Validated helper boundaries
 
-See `SKILL.md` and the format reference for supported layouts. Chemical site fractions require an explicit occupancy multiplier. Repeated hkl requires a verified sequence-keyed observation map. Legacy editing/filtering refuses unsupported multi-phase or multi-block input before writing. Joint datasets and measurement diagnostics have dedicated references.
+The wavelength commands above use the verified 22-field TOPAZ/CORELLI nuclear
+export. Its fixed-width HKL prefix can touch the intensity, so split only the
+payload after character 12. Before using a new export, match representative
+source observations to the incident wavelength in Jana's E-format `.m90` at
+four-decimal Å precision. For repeated HKL, pass `--observations map.csv` keyed
+by the full Jana tag. The `.m83` listing may cover a subset of the map. See the
+[format reference](references/file_formats_m40_m50_m90.md#sns-tof-nuclear-export-and-observation-mapping)
+for the layout and verification procedure.
+
+See `SKILL.md` for the other helper boundaries. Chemical site fractions require
+an explicit occupancy multiplier. Editing and filtering are limited to their
+documented single-phase or single-block layouts. Joint datasets and
+measurement diagnostics have dedicated references.

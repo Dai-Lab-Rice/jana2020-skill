@@ -221,13 +221,40 @@ active amplitude scales. An intensity ratio is (Fo/Fc)²; an amplitude ratio is
 Fo/Fc. Do not interchange sigma(Fo) and sigma(I). Extinction changes the relation
 to uncorrected input intensity, so validate it for the active model.
 
-Legacy diagnostic CLI: `--hkl` remains a Mantid 22-column input (zero-based
-wavelength token 18, d token 19). Unique hkl matching is permitted only when both
-sides are unique. Repeated hkl requires `--observations map.csv` with columns
-`sequence,h,k,l,wavelength_A,d_A`; sequence is the full native trailing tag.
-Build that map from verified import provenance, not arbitrary row enumeration.
-Missing/duplicate IDs, mismatched hkl and unsupported multiple blocks fail before
-output. The legacy filter rejects multi-block inputs and in-place writes.
+### SNS TOF nuclear export and observation mapping
+
+Both wavelength helpers require `--hkl-layout sns-tof-hkl` for the verified
+22-field TOPAZ/CORELLI nuclear `.hkl` export. `corelli-garnet` is a compatibility
+alias. Read the first 12 characters as three four-character integer indices,
+then split the payload on whitespace. A full-width intensity like `12483.52` can
+touch the last index and make a whole-line split read `0` and that intensity as
+`012483.52`. Incident wavelength and d-spacing in Å are zero-based logical fields
+6 and 19, or payload tokens 3 and 16. The all-zero row ends the file. Malformed
+rows and six-index satellite exports are rejected with the filename and line
+number. [Mantid SaveHKL source](https://github.com/mantidproject/mantid/blob/main/Framework/Crystal/src/SaveHKL.cpp)
+
+Use unique HKL matching when both inputs have unique indices. For repeated HKL,
+supply `--observations map.csv` with columns `sequence,h,k,l,wavelength_A,d_A`.
+Use the full trailing Jana tag, such as `2001`, and establish the association
+from the import provenance. The map must describe the companion source
+observations. Each listed tag must occur once and resolve to the same HKL.
+An `.m83` listing can cover fewer observations than the map. The single-block
+`.m90` filter checks every mapped native row before applying any cutoff and
+renumbers surviving tags for the output file.
+
+When checking a new export, import it into a separate Jana project and generate
+a non-averaged E-format `.m90`. Pair representative rows by observation identity,
+including repeats at different wavelengths and rows where the candidate source
+columns differ. For the supported native TOF E-format row, the incident
+wavelength occupies columns 63–70 (one-based), or slice `[62:70]`. Compare the
+mapped source wavelength with the native value at its four-decimal Å precision.
+The filter performs this check for every matched row before writing. Agreement
+establishes column mapping only. Wavelength calibration requires independent
+evidence.
+
+The checked CeGaGe SXD `JANASXD_3D.int` export has a named `Lambda` column. For
+example, the 10 K observation `(2,-4,-12)` was 1.3200 Å in both the source and
+Jana. That export uses its own layout outside the SNS helpers.
 
 The parser reports raw ai by default; `--mult` explicitly supplies Nsym/Msite
 only for a model where that conversion is appropriate for all reported atoms.

@@ -51,10 +51,14 @@ uncertainties, assumptions and artifact links. Never automatically cull large re
   residual summaries are retained; check the original per-dataset listing.
 - `scripts/edit_jana_files.py`: targeted legacy single-phase edits. Unsupported
   preambles, multi-phase and dataset-specific extinction layouts fail before writing.
-- `scripts/plot_extinction_wavelength.py`: amplitude and intensity residual diagnostics;
-  repeat observations require an explicit sequence-keyed `--observations` CSV.
-- `scripts/filter_m90_wavelength.py`: explicitly requested single-block sensitivity
-  subsets. Same observation mapping requirement; never overwrites the input.
+- Use `--hkl-layout sns-tof-hkl` with the verified 22-field TOPAZ/CORELLI nuclear
+  export for both wavelength helpers. Confirm the source column against the native
+  `.m90` using the [format reference](references/file_formats_m40_m50_m90.md#sns-tof-nuclear-export-and-observation-mapping).
+  Repeated HKL requires an explicit `--observations` CSV keyed by the full native tag.
+- `scripts/plot_extinction_wavelength.py` plots amplitude and intensity residual
+  diagnostics from the observations listed in `.m83`.
+- `scripts/filter_m90_wavelength.py` checks the mapped wavelengths against the
+  single-block Jana E-format `.m90` before writing a sensitivity subset.
 - `scripts/analyze_fourier_m81.py`: specialized binary-map utility; verify the actual
   binary layout, grid, units and normalization before interpreting its output.
 
