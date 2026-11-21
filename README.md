@@ -30,8 +30,8 @@ jana2020-skill/
 │   ├── analyze_fourier_m81.py                # Binary .m81 3D Difference Fourier reader, interpolator & PNG plotter
 │   └── plot_extinction_wavelength.py         # Fobs/Fcalc vs wavelength diagnostic plotter from .m83 & .hkl
 └── examples/
-    ├── sample_MnTe_340K.m50                  # Annotated reference .m50 file (P63/mmc, neutron formtab -62)
-    └── sample_MnTe_340K.m40                  # Annotated reference .m40 file (flags, equations & s.u. block)
+    ├── legacy_single_scale.m50                  # Annotated reference .m50 file (P63/mmc, neutron formtab -62)
+    └── legacy_single_scale.m40                  # Annotated reference .m40 file (flags, equations & s.u. block)
 ```
 
 ---
@@ -42,16 +42,16 @@ All scripts are designed for Python 3 (`numpy`, `matplotlib`):
 
 ```powershell
 # 1. Parse a single refinement directory or compare an entire tree of trials
-python scripts/parse_jana_ref.py path/to/refinement_dir --mult 12
+python scripts/parse_jana_ref.py path/to/refinement_dir
 
 # 2. Modify atom flags, occupancies, or equations in .m40 / .m50
-python scripts/edit_jana_files.py path/to/project.m40 --set-flag Te1=1000101000
+python scripts/edit_jana_files.py path/to/project.m40 --set-flag A1=1000101000
 
 # 3. Filter a TOF .m90 file by maximum wavelength (e.g. lambda <= 1.8 A)
 python scripts/filter_m90_wavelength.py --hkl data.hkl --hkl-layout sns-tof-hkl --m90-in orig.m90 --m90-out subset.m90 --max-lambda 1.8
 
-# 4. Analyze a 3D Difference Fourier map (.m81) and plot 2D contour slices (PNG)
-python scripts/analyze_fourier_m81.py path/to/project.m81 --nx 42 --ny 42 --nz 67 --out-png fourier_slices.png
+# 4. Analyze a Difference Fourier map using the grid dimensions from its .fou listing
+python scripts/analyze_fourier_m81.py path/to/project.m81 --nx 40 --ny 48 --nz 64 --site A1=0,0,0 --z-slice 0.5 --out-png fourier_slice.png
 
 # 5. Plot normalized intensity ratios (Iobs/Icalc) vs wavelength (PNG)
 python scripts/plot_extinction_wavelength.py --hkl data.hkl --hkl-layout sns-tof-hkl --m83 project.m83 --out-png wavelength_dependence.png

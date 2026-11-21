@@ -10,7 +10,7 @@ description: >-
 
 Use native files for model construction and pywinauto for the interactive Windows
 program. Do not assume batch REFINE/FOURIER switches exist. Discover the installed
-application/interpreter; this computer has a dedicated `jana-ui` Python environment.
+Jana application and the Python environment used for Windows automation.
 Read [Windows workflow](references/pywinauto_workflow.md) before GUI control.
 
 ## Essential workflow
@@ -22,7 +22,7 @@ Read [Windows workflow](references/pywinauto_workflow.md) before GUI control.
    not guessed menu labels. Keep tests isolated and validate counts, numeric
    fields, scales/domains and observation identity before reuse.
 3. Construct/edit `.m50`, `.m40` and `.m90` using their actual layout, not fixed
-   line numbers from another material. Read the [format reference](references/file_formats_m40_m50_m90.md).
+   line numbers from an example project. Read the [format reference](references/file_formats_m40_m50_m90.md).
    Fully occupied special sites use crystallographic occupancy
    ai = chemical_fraction × site_multiplicity / symmetry_order. General sites can
    have ai=1. Supply the appropriate per-site conversion; never assume ×12 globally.
@@ -61,7 +61,7 @@ uncertainties, assumptions and artifact links. Never automatically cull large re
   single-block Jana E-format `.m90` before writing a sensitivity subset.
 - `scripts/analyze_fourier_m81.py`: specialized binary-map utility; verify the actual
   binary layout, grid, units and normalization before interpreting its output.
+  Supply dimensions from the current map and fractional coordinates for any sites to probe.
 
-The MnTe example files illustrate one legacy layout; they are not universal
-templates or defaults for other materials. See the format reference for helper
-interfaces, unsupported-layout handling and verified SXD conventions.
+The bundled example files illustrate the legacy single-scale layout. See the
+format reference for helper interfaces and verified importer-specific conventions.

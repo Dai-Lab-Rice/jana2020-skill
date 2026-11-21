@@ -7,8 +7,8 @@ RMS noise sigma), performs trilinear interpolation at candidate Wyckoff sites,
 and optionally generates a 2D contour PNG slice.
 
 Usage:
-  C:\\Users\\hplfz\\miniconda3\\python.exe analyze_fourier_m81.py path/to/Project.m81 \\
-      --nx 42 --ny 42 --nz 67 --out-png fourier_slices.png
+  python analyze_fourier_m81.py path/to/Project.m81 \\
+      --nx 40 --ny 48 --nz 64 --z-slice 0.5 --out-png fourier_slices.png
 """
 
 import argparse
@@ -21,15 +21,15 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 
-def load_m81_grid(m81_path, nx=42, ny=42, nz=67):
+def load_m81_grid(m81_path, nx, ny, nz):
     with open(m81_path, 'rb') as f:
         data = f.read()
 
     plane_size = nx * ny * 4
     expected_bytes = (nz + 1) * plane_size
-    if len(data) < expected_bytes:
+    if len(data) != expected_bytes:
         raise ValueError(
-            f"File size {len(data)} bytes is smaller than expected {(nz + 1) * plane_size} bytes "
+            f"File size {len(data)} bytes differs from the expected {expected_bytes} bytes "
             f"for grid ({nx}, {ny}, {nz}). Check grid dimensions in .fou."
         )
 
@@ -92,7 +92,7 @@ def plot_fourier_slice_png(grid, z_frac, out_png):
 
     vmax = max(abs(grid.max()), abs(grid.min()))
     cs = ax.contourf(X, Y, slice_2d, levels=25, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
-    fig.colorbar(cs, ax=ax, label=r'$\Delta\rho\ (\mathrm{fm/\AA^3})$')
+    fig.colorbar(cs, ax=ax, label=r'$\Delta\rho$ (native map units)')
     ax.set_xlabel('Fractional $x$')
     ax.set_ylabel('Fractional $y$')
     ax.set_title(f'Difference Fourier Section at $z = {z_frac:.2f}$')
@@ -105,13 +105,17 @@ def plot_fourier_slice_png(grid, z_frac, out_png):
 def main():
     parser = argparse.ArgumentParser(description="Analyze a Jana2020 binary .m81 Difference Fourier map.")
     parser.add_argument("m81", help="Path to .m81 file.")
-    parser.add_argument("--nx", type=int, default=42, help="Grid points along a (default: 42).")
-    parser.add_argument("--ny", type=int, default=42, help="Grid points along b (default: 42).")
-    parser.add_argument("--nz", type=int, default=67, help="Grid points along c (default: 67).")
-    parser.add_argument("--site", action="append", default=[], help="Custom site Label=x,y,z to interpolate.")
-    parser.add_argument("--z-slice", type=float, default=0.75, help="Fractional z for 2D PNG slice (default: 0.75).")
+    parser.add_argument("--nx", type=int, required=True, help="Grid points along a from the .fou listing.")
+    parser.add_argument("--ny", type=int, required=True, help="Grid points along b from the .fou listing.")
+    parser.add_argument("--nz", type=int, required=True, help="Grid points along c from the .fou listing.")
+    parser.add_argument("--site", action="append", default=[], help="Site Label=x,y,z in fractional coordinates (repeatable).")
+    parser.add_argument("--z-slice", type=float, help="Fractional z for the PNG slice.")
     parser.add_argument("--out-png", default=None, help="Output PNG path for 2D slice contour plot.")
     args = parser.parse_args()
+    if min(args.nx, args.ny, args.nz) <= 0:
+        parser.error("Grid dimensions must be positive.")
+    if args.out_png and args.z_slice is None:
+        parser.error("--out-png requires --z-slice.")
 
     grid = load_m81_grid(args.m81, nx=args.nx, ny=args.ny, nz=args.nz)
     rms = float(np.sqrt(np.mean(grid ** 2)))
@@ -119,28 +123,19 @@ def main():
     print("=" * 68)
     print(f"DIFFERENCE FOURIER ANALYSIS: {args.m81}")
     print("=" * 68)
+    print("  Density values are in native map units.")
     print(f"  Grid dimensions          : ({args.nx}, {args.ny}, {args.nz})")
-    print(f"  Maximum positive peak    : {grid.max():+8.4f} fm/A^3 ({grid.max()/rms:+5.1f} sigma)")
-    print(f"  Minimum negative well    : {grid.min():+8.4f} fm/A^3 ({grid.min()/rms:+5.1f} sigma)")
-    print(f"  RMS background noise     : {rms:8.4f} fm/A^3")
+    print(f"  Maximum positive peak    : {grid.max():+8.4f} ({grid.max()/rms:+5.1f} sigma)")
+    print(f"  Minimum negative well    : {grid.min():+8.4f} ({grid.min()/rms:+5.1f} sigma)")
+    print(f"  RMS background noise     : {rms:8.4f}")
     print("-" * 68)
 
-    default_sites = [
-        ("Mn1 (2a)", 0.0, 0.0, 0.0),
-        ("Te1 (2c)", 1 / 3, 2 / 3, 0.25),
-        ("Interstitial 2d", 1 / 3, 2 / 3, 0.75),
-        ("Interstitial 4f", 1 / 3, 2 / 3, 0.893),
-        ("Octahedral 2b", 0.0, 0.0, 0.25),
-    ]
     for item in args.site:
         label, coords = item.split("=", 1)
         sx, sy, sz = (float(c) for c in coords.split(","))
-        default_sites.append((label, sx, sy, sz))
-
-    for name, sx, sy, sz in default_sites:
         val = trilinear_interp(grid, sx, sy, sz)
         sig = val / rms if rms > 0 else 0.0
-        print(f"  {name:<20} ({sx:6.3f}, {sy:6.3f}, {sz:6.3f}) : {val:+8.4f} fm/A^3  ({sig:+5.1f} sigma)")
+        print(f"  {label:<20} ({sx:6.3f}, {sy:6.3f}, {sz:6.3f}) : {val:+8.4f}  ({sig:+5.1f} sigma)")
     print("=" * 68)
 
     if args.out_png:

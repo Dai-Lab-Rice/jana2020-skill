@@ -10,7 +10,7 @@ When starting from a raw reflection file (such as a 22-column ORNL SNS TOPAZ / C
 
 ### Step 1: Create a New Structure
 1. Open **Jana2020** $\rightarrow$ click the discovered native **Structure → New** command (verify the current menu).
-2. Browse to the target project directory and type the structure name (e.g., `MnTe_340K`).
+2. Browse to the target project directory and type the structure name (e.g., `tof_refinement`).
 
 ### Step 2: Select Reflection Format Type
 - **Actual Radio Option**: Select **`"Single crystal: known diffractometer formats"`** (do *not* tell the user to look for a plain `"Single crystal"` option).
@@ -19,28 +19,28 @@ When starting from a raw reflection file (such as a 22-column ORNL SNS TOPAZ / C
 ### Step 3: Select Diffractometer & Input `.hkl` File
 - **`"Data reduction file from:"`** dropdown: Select **`"TOPAZ, Corelli"`** (for SNS TOF Laue Mantid `.hkl` files) or the appropriate diffractometer format.
 - **`"Input file name:"`** file picker:
-  - *Quirk*: By default, Jana pre-fills this box with `<structure_name>.hkl`. If the actual `.hkl` file has a different filename (e.g., `MnTe_340K_Hexagonal_P.hkl`), instruct the user to click **`Browse`** and select the real `.hkl` file.
+  - *Quirk*: By default, Jana pre-fills this box with `<structure_name>.hkl`. If the actual `.hkl` file has a different filename (e.g., `reduced_nuclear.hkl`), instruct the user to click **`Browse`** and select the real `.hkl` file.
 -Click **`Next`**.
 
 ### Step 4: Complete / Correct Experimental Parameters (Manual Cell Entry!)
 - **Critical Quirk**: On the `"complete / correct experimental parameters"` screen, the **`"cell parameters:"`** field is **blank by default** for TOPAZ `.hkl` imports (because Mantid `.hkl` files do not embed unit cell headers).
-- **Agent Action**: Always provide the exact $a, b, c, \alpha, \beta, \gamma$ values upfront in your instructions so the user can type them directly into `"cell parameters:"` (space-separated, e.g., `4.1522 4.1522 6.7162 90 90 120`).
+- **Agent Action**: Always provide the exact $a, b, c, \alpha, \beta, \gamma$ values upfront in your instructions so the user can type them directly into `"cell parameters:"` (space-separated as `a b c alpha beta gamma`).
 - Click **`Next`**.
 
 ### Step 5: Derived Lattice Parameters, Twins & Data Repository
 1. Jana displays the lattice parameters and `"derived lattice parameters from actual"` and asks if there are any twins.
 2. Instruct the user to click **`Next`**, then **`Next`** again.
-3. Jana shows the **`"Data repository"`** table listing `(File, Type of data, Used radiation)` â€” e.g., `(MnTe_*.hkl, Single crystal, Neutrons TOF)`.
+3. Jana shows the **`"Data repository"`** table listing `(File, Type of data, Used radiation)` â€” e.g., `(reduced_nuclear.hkl, Single crystal, Neutrons TOF)`.
 4. Click **`OK`** (or **`Next`**).
 
 ### Step 6: Create Refinement Reflection File (`.m90`)
 Jana opens the reflection file creation dialog:
-- **Unobserved threshold**: `Reflections I < [ 3 ] * sig(I) will be sorted as unobserved.` (Set to `3`).
+- **Unobserved threshold**: `Reflections I < [ 3 ] * sig(I) will be sorted as unobserved.` Use the observation threshold chosen for the current refinement.
 - **Checkboxes**:
   - **`[x] use in output file E-format (recommended for data with large dynamical range)`** â€” **ALWAYS CHECK THIS** for TOF neutron data! TOF reflections span many orders of magnitude; leaving E-format unchecked can cause `******` fixed-point format overflows in `.m90`.
   - **`[ ] run in silent mode`**
 - Click **`OK`** / **`Next`**.
-- Jana reports the number of reflections read and written (e.g., `1462/1472 reflections read / written, no rejections due to systematic extinctions` â€” zero rejections occur here because the space group is still $P1$ during initial import).
+- Record the number of reflections read and written and the reported rejection reasons. An initial $P1$ import has no systematic absences from the space group.
 
 ### Step 7: Accept the DatBlock
 Jana presents three radio buttons:
@@ -92,14 +92,14 @@ If the user is inspecting or modifying settings inside the Jana2020 GUI, use the
      - `Origin shift`: `0 0 0`
      - Also includes buttons: `complete the set`, `make test`, `run Stokes & Campbell SG-test`, `define local symmetry operators`.
   3. **`Composition` tab**:
-     - `Formula - list of atomic types`: space-separated element symbols (e.g., `"Mn Te"` or `"Mn Te Li"`).
-     - `Formula units`: integer $Z$ (defaults to `1`; set to e.g. `2` for NiAs-type unit cell).
+     - `Formula - list of atomic types`: space-separated element symbols for the current structure.
+     - `Formula units`: set the formula units per cell, $Z$, for the current structure.
   4. **`Magnetic parameters` tab**:
      - Checkbox: `Activate the magnetic option`.
 - **Re-creating `.m90` after Symmetry Change**:
   - Closing `"Edit basic parameters"` after changing symmetry triggers a dialog titled **`"Question"`**:
     *"The program has detected a change of the symmetry/twinning which call for re-creation of the reflection file. Do you want to re-create refinement reflection file just now?"*
-  - Instruct the user to click **`Yes`**, set `I < 3 * sig(I)`, and check **`[x] use in output file E-format`**. Jana will now reject systematically extinct reflections according to the space group.
+  - Instruct the user to click **`Yes`**, verify the observation threshold and averaging settings for the current refinement, and check **`[x] use in output file E-format`** for the TOF workflow. Jana will now reject systematically extinct reflections according to the space group.
 
 ### B. Adding & Editing Atoms (`New -> New atom` vs. `Edit atoms`)
 - **Critical Quirk**: When a structure has 0 atoms, **`Edit structure parameters -> Edit atoms` DOES NOT EXIST** in the dropdown menu!
@@ -107,7 +107,7 @@ If the user is inspecting or modifying settings inside the Jana2020 GUI, use the
   1. Click **`New -> New atom`** in the top menu.
   2. Type the fractional coordinates (e.g. `0 0 0`) into the **`"New atom coordinates:"`** box.
   3. Click **`"Include the peak at the specified position"`**.
-  4. Enter **`"Name of the atom:"`** (e.g. `Mn1`), chemical type (`Mn`), and keep the pre-filled **`"Occupancy reduction"`** (which Jana auto-calculates as $N_{\text{sym}} / M_{\text{site}}$, e.g. `12` for a 2-fold site in $P6_3/mmc$).
+  4. Enter **`"Name of the atom:"`** (e.g. `A1`), its chemical type, and keep the pre-filled **`"Occupancy reduction"`** (which Jana auto-calculates as $N_{\text{sym}} / M_{\text{site}}$, e.g. `12` for a 2-fold site in $P6_3/mmc$).
   5. Once at least one atom exists, **`Edit structure parameters -> Edit atoms`** appears in the menu.
 - **Wyckoff Letter Display Quirk (`4e` vs `2a`)**:
   - In space group $P6_3/mmc$, an atom placed at $(0, 0, 0)$ (true Wyckoff position $2a$, multiplicity 2) is displayed as **`4e`** in the `Edit atoms` GUI window!
@@ -116,7 +116,7 @@ If the user is inspecting or modifying settings inside the Jana2020 GUI, use the
 ### C. Scale Factor & Extinction Dialogs
 - **Scale Factor Dialog**:
   - Shows checkboxes: `TOverall: 0 [ ]`, `scale1: 1.535602 [x]`, `scale2: 0 [ ]` ... `scale6: 0 [ ]`, and a spinner `Maximal number of scales: 6 (up/down)` that cannot be reduced below `6`, with `scale2..scale6` greyed out.
-  - Explain to the user that `6` is simply Jana's minimum display page size; only `scale1 [x]` is active and refined for a single dataset.
+  - The six displayed slots can include unused scales. Check the flags and imported group assignments to determine which scales are active.
 - **Extinction Dialog**:
   - Dropdown **`Extinction model`**:
     - `None`

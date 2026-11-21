@@ -2,14 +2,11 @@
 
 ## Environment and execution
 
-Use pywinauto before computer-use tools or asking the user to click. The existing dedicated Miniconda environment is:
-
-- Environment: `jana-ui`
-- Prefix: `C:\Users\hplfz\miniconda3\envs\jana-ui`
-- Interpreter: `C:\Users\hplfz\miniconda3\envs\jana-ui\python.exe`
-- Verified packages: Python 3.11, pywinauto 0.6.9, pywin32 312.
-
-Call the interpreter by absolute path; activation is unnecessary. Check it exists before use. Do not recreate the environment or install packages when it is already usable. If moved, discover the replacement with Conda rather than silently using base Python.
+Use pywinauto before computer-use tools or asking the user to click. Discover
+the Python environment for Jana automation on the current Windows host. Check
+that its interpreter can import `pywinauto` and `win32gui`. An existing Conda
+environment can be located with `conda env list`. Use the discovered interpreter
+by absolute path and reuse the environment when it works.
 
 In the tested Codex session a sandboxed shell saw zero desktop windows, while an authorized unsandboxed shell could control Jana. An empty window list alone does not mean Jana is closed. Use the execution tool's approval mechanism for desktop access when necessary; never bypass a denial. User authorization for Jana automation persists within its stated scope.
 
@@ -28,9 +25,9 @@ Use short scripts and output only relevant titles, control identifiers, and resu
 
 - `Incorrect flag for atomic type (=0)` was resolved by fixing the `.m40` ten-character atom-name field; the type index must immediately follow it.
 - `forrtl: severe (64): input conversion error` at `REFLOOP` line 2090 occurred while the parent P1 import project was still open. It is not a unique diagnosis: verify the active project, fixed-column fields, reflection formatting, and scale layout before retrying.
-- Preserve the imported `commands / maxsc / end` preamble and all scale and s.u. rows. The 360 K CORELLI example used 60 scales, not a universal count.
+- Preserve the imported `commands / maxsc / end` preamble and all scale and s.u. rows. For CORELLI imports, read the scale count from the current file and verify the assigned groups in Jana.
 - Enable E-format through Jana's reflection-file creation dialog. Changing the `.m90` header alone does not convert data or prove a crash was caused by E-format. Validate count, numeric fields, absence of overflow asterisks, and sequence tags.
-- For a commensurate magnetic hypothesis, an integration vector in `.int`/`.mat` is not independent evidence of measured satellite centers. Inspect fitted centroids or reciprocal-space profiles before changing q. At 340 K the exports recorded qz=0.4913; qz=0.5 remained unverified without the peak workspace or volume.
+- For a commensurate magnetic hypothesis, an integration vector in `.int`/`.mat` is not independent evidence of measured satellite centers. Inspect fitted centroids or reciprocal-space profiles before changing q.
 
 ## Native controls, isolated execution and failures
 
