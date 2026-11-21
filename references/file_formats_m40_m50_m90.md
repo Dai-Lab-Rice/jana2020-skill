@@ -14,7 +14,7 @@ This reference documents the exact layout and syntax of Jana2020's core project 
 ### Annotated `.m50` Example ($P6_3/mmc$ TOF Neutron Refinement)
 ```text
 Version Jana2020
-title LiMnTe_340K
+title Legacy_single_scale_example
 cell 4.1532 4.1532 6.719 90 90 120
 esdcell 0.0003 0.0003 0.0008 0 0 0
 spgroup P63/mmc 194 6
@@ -44,20 +44,18 @@ symmetry y x z+1/2
 symmetry x-y -y z+1/2
 symmetry -x -x+y z+1/2
 unitsnumb 2
-atlist Mn Te Li
+atlist Si Ge Al
 formtab -62
-atom Mn atradius 1.37 color 168008158 donor 0 acceptor 0
-atom Te atradius 1.37 color 173162081 donor 0 acceptor 0
-atom Li atradius 1.57 color 134224116 donor 0 acceptor 0
+atom Si atradius 1.37 color 168008158 donor 0 acceptor 0
+atom Ge atradius 1.37 color 173162081 donor 0 acceptor 0
+atom Al atradius 1.57 color 134224116 donor 0 acceptor 0
 roundmethod 1 autrefkeys 1
 end
 *******************************************************************************
 refine
   cycles 100 damp 0.2
   iext 1 itypex 1 idistr 1 radius 0.01
-  equation : occ[Li1]=0.083333-occ[Mn1]
-  equation : u11[Li1]=u11[Mn1]
-  equation : u33[Li1]=u11[Mn1]
+  equation : occ[D1]=0.083333-occ[A1]
 end refine
 fourier
 end fourier
@@ -80,8 +78,8 @@ end contour
   - Common parameter names: `occ[AtomName]`, `x[AtomName]`, `y[AtomName]`, `z[AtomName]`, `u11[AtomName]`, `u22[AtomName]`, `u33[AtomName]`, `u12[AtomName]`, `u13[AtomName]`, `u23[AtomName]`, `uiso[AtomName]`.
   - **CRITICAL EQUATION SCALING RULE**: `occ[AtomName]` in an equation refers to the raw crystallographic occupancy $a_i = f_{\text{site}} \times \frac{M_{\text{site}}}{N_{\text{sym}}}$ stored in `.m40`, **NOT** a universal chemical fraction!
     - On a 2-fold site ($M_{\text{site}} = 2$) in $P6_3/mmc$ ($N_{\text{sym}} = 24$), full site occupancy is $2/24 = 0.083333$.
-    - Therefore, $\text{occ}(\text{Mn1}) + \text{occ}(\text{Li1}) = 1$ **must** be written as:
-      `equation : occ[Li1]=0.083333-occ[Mn1]`
+    - For full chemical occupancy shared by `A1` and `D1` on that site, write
+      `equation : occ[D1]=0.083333-occ[A1]`
 
 ---
 
@@ -100,22 +98,22 @@ Atom records use a fixed ten-character name field immediately followed by the ty
  0.000000 0.000000 0.000000                                 000
  0.000000 0.000000 0.000000 0.000000 0.000000 0.000000      000000
  0.001250 0.000000 0.000000 0.000000 0.000000 0.000000      100000
-Mn1       1  2     0.083333 0.000000 0.000000 0.000000
+A1        1  2     0.080833 0.000000 0.000000 0.000000
  0.018750 0.018750 0.015500 0.009375 0.000000 0.000000      0000101000
-Te1       2  2     0.079923 0.333333 0.666667 0.250000
+B1        2  2     0.079923 0.333333 0.666667 0.250000
  0.009120 0.009120 0.011842 0.004560 0.000000 0.000000      1000101000
-Li1       3  1     0.002500 0.333333 0.666667 0.892784
- 0.037323 0.000000 0.000000 0.000000 0.000000 0.000000      1001100000
+D1        3  1     0.002500 0.000000 0.000000 0.000000
+ 0.037323 0.000000 0.000000 0.000000 0.000000 0.000000      0000100000
 --------------------------   s.u. block   --------------------------------------
  0.014714 0.000000 0.000000 0.000000 0.000000 0.000000
  0.000000 0.000000 0.000000
  0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
  0.000047 0.000000 0.000000 0.000000 0.000000 0.000000
-Mn1                0.000000 0.000000 0.000000 0.000000
+A1                 0.000000 0.000000 0.000000 0.000000
  0.000217 0.000217 0.000281 0.000109 0.000000 0.000000
-Te1                0.000290 0.000000 0.000000 0.000000
+B1                 0.000290 0.000000 0.000000 0.000000
  0.000108 0.000108 0.000153 0.000054 0.000000 0.000000
-Li1                0.001100 0.000000 0.000000 0.015910
+D1                 0.001100 0.000000 0.000000 0.000000
  0.026600 0.000000 0.000000 0.000000 0.000000 0.000000
 ```
 
@@ -134,7 +132,7 @@ Li1                0.001100 0.000000 0.000000 0.015910
 ### Atom Blocks (2 Lines per Atom)
 - **Line A (Coordinates & Occupancy)**:
   `<AtomName> <TypeIdx> <ADPMode> <ai> <x> <y> <z>`
-  - `AtomName`: Up to 10 characters (e.g. `Mn1`, `Te1`, `Li1`).
+  - `AtomName`: Up to 10 characters (e.g. `A1`, `B1`, `D1`).
   - `TypeIdx`: 1-based index into `atlist` in `.m50` (`1`, `2`, `3`, ...).
   - `ADPMode`:
     - `1` = Isotropic thermal parameter ($U_{\text{iso}}$).
@@ -144,7 +142,7 @@ Li1                0.001100 0.000000 0.000000 0.015910
       $$a_i = f_{\text{site}} \times \frac{M_{\text{site}}}{N_{\text{sym}}}$$
     - **Formula-Unit Stoichiometry ($c_{\text{f.u.}}$ atoms per formula unit, with $Z$ formula units per cell)**:
       $$a_i = c_{\text{f.u.}} \times \frac{Z}{N_{\text{sym}}}$$
-      *Note*: Notice that if you want a fixed stoichiometry per formula unit (e.g., $c_{\text{f.u.}} = 0.03$ Li per $\text{MnTe}$ formula unit in $P6_3/mmc$ where $Z=2, N_{\text{sym}}=24$), $a_i = 0.03 \times \frac{2}{24} = 0.002500$ regardless of whether Li is placed on a 2-fold site ($2a, 2c, 2d$, where $f_{\text{site}} = 3\%$) or a 4-fold split site ($4f$, where $f_{\text{site}} = 1.5\%$ across twice as many sites)! Conversely, when reporting the *site occupancy fraction* $f_{\text{site}}$ from $a_i$, multiply $a_i$ by $\frac{N_{\text{sym}}}{M_{\text{site}}}$ ($12$ for $2a/2c/2d$; $6$ for $4f$), whereas when reporting *stoichiometry per formula unit* $c_{\text{f.u.}}$, multiply $a_i$ by $\frac{N_{\text{sym}}}{Z}$ ($12$ for $Z=2$).
+      *Note*: Notice that if you want a fixed stoichiometry per formula unit (e.g., $c_{\text{f.u.}} = 0.03$ dopant atoms per formula unit in $P6_3/mmc$ where $Z=2, N_{\text{sym}}=24$), $a_i = 0.03 \times \frac{2}{24} = 0.002500$ regardless of whether Li is placed on a 2-fold site ($2a, 2c, 2d$, where $f_{\text{site}} = 3\%$) or a 4-fold split site ($4f$, where $f_{\text{site}} = 1.5\%$ across twice as many sites)! Conversely, when reporting the *site occupancy fraction* $f_{\text{site}}$ from $a_i$, multiply $a_i$ by $\frac{N_{\text{sym}}}{M_{\text{site}}}$ ($12$ for $2a/2c/2d$; $6$ for $4f$), whereas when reporting *stoichiometry per formula unit* $c_{\text{f.u.}}$, multiply $a_i$ by $\frac{N_{\text{sym}}}{Z}$ ($12$ for $Z=2$).
 - **Line B (ADPs & 10-Digit Refinement Flag)**:
   `<U11/Uiso> <U22> <U33> <U12> <U13> <U23>      <10-digit flag>`
 
@@ -173,9 +171,9 @@ Below `--------------------------   s.u. block   -------------------------------
 - Lines 1â€“4 give the s.u.'s of the global parameters (Line 1 Token 0 = $\sigma(\text{scale1})$; Line 4 Token 0 = $\sigma(G_{\text{iso}})$).
 - For each atom, Line A has **5 whitespace-separated tokens** (unlike the 7 tokens in the main block because `TypeIdx` and `ADPMode` are integers without uncertainties):
   ```text
-  Te1                0.000290 0.000000 0.000000 0.000000
+  B1                 0.000290 0.000000 0.000000 0.000000
   ```
-  - `parts[0]` = Atom name (`Te1`)
+  - `parts[0]` = Atom name (`B1`)
   - `parts[1]` = $\sigma(a_i)$ (crystallographic occupancy s.u.)
   - `parts[2]` = $\sigma(x)$
   - `parts[3]` = $\sigma(y)$
@@ -221,13 +219,41 @@ active amplitude scales. An intensity ratio is (Fo/Fc)²; an amplitude ratio is
 Fo/Fc. Do not interchange sigma(Fo) and sigma(I). Extinction changes the relation
 to uncorrected input intensity, so validate it for the active model.
 
-Legacy diagnostic CLI: `--hkl` remains a Mantid 22-column input (zero-based
-wavelength token 18, d token 19). Unique hkl matching is permitted only when both
-sides are unique. Repeated hkl requires `--observations map.csv` with columns
-`sequence,h,k,l,wavelength_A,d_A`; sequence is the full native trailing tag.
-Build that map from verified import provenance, not arbitrary row enumeration.
-Missing/duplicate IDs, mismatched hkl and unsupported multiple blocks fail before
-output. The legacy filter rejects multi-block inputs and in-place writes.
+### SNS TOF nuclear export and observation mapping
+
+Both wavelength helpers require `--hkl-layout sns-tof-hkl` for the verified
+22-field TOPAZ/CORELLI nuclear `.hkl` export. `corelli-garnet` is a compatibility
+alias. Read the first 12 characters as three four-character integer indices,
+then split the payload on whitespace. A full-width intensity like `12483.52` can
+touch the last index and make a whole-line split read `0` and that intensity as
+`012483.52`. Incident wavelength and d-spacing in Å are zero-based logical fields
+6 and 19, or payload tokens 3 and 16. The all-zero row ends the file. Malformed
+rows and six-index satellite exports are rejected with the filename and line
+number. [Mantid SaveHKL source](https://github.com/mantidproject/mantid/blob/main/Framework/Crystal/src/SaveHKL.cpp)
+
+Use unique HKL matching when both inputs have unique indices. For repeated HKL,
+supply `--observations map.csv` with columns `sequence,h,k,l,wavelength_A,d_A`.
+Use the full trailing Jana tag, such as `2001`, and establish the association
+from the import provenance. The map must describe the companion source
+observations. Each listed tag must occur once and resolve to the same HKL.
+An `.m83` listing can cover fewer observations than the map. The single-block
+`.m90` filter checks every mapped native row before applying any cutoff and
+renumbers surviving tags for the output file.
+
+When checking a new export, import it into a separate Jana project and generate
+a non-averaged E-format `.m90`. Pair representative rows by observation identity,
+including repeats at different wavelengths and rows where the candidate source
+columns differ. For the supported native TOF E-format row, the incident
+wavelength occupies columns 63–70 (one-based), or slice `[62:70]`. Compare the
+mapped source wavelength with the native value at its four-decimal Å precision.
+The filter performs this check for every matched row before writing. Agreement
+establishes column mapping only. Wavelength calibration requires independent
+evidence.
+
+The verified ISIS SXD `JANASXD_3D.int` layout identifies incident wavelength
+through its named `Lambda` column. For an SXD dataset, match observations to
+the native Jana rows and compare that column at the native precision. The SNS
+helpers accept the 22-field SNS nuclear `.hkl` layout described above.
 
 The parser reports raw ai by default; `--mult` explicitly supplies Nsym/Msite
 only for a model where that conversion is appropriate for all reported atoms.
@@ -242,7 +268,7 @@ complex layouts must be handled by validated layout-aware code, not guessed offs
 Generated when running `FOURIER` (e.g., Difference Fourier $\Delta\rho(\mathbf{r}) = \rho_{\text{obs}}(\mathbf{r}) - \rho_{\text{calc}}(\mathbf{r})$).
 - **Binary Layout**:
   - Unformatted stream of 32-bit little-endian IEEE floats (`<f4`).
-  - Given grid dimensions $(N_x, N_y, N_z)$ (reported in the `.fou` listing or determined from unit-cell grid spacing $\approx 0.1\text{ \AA}$):
+  - Given grid dimensions $(N_x, N_y, N_z)$ (from the map's own `.fou` listing):
     - Each $z$-plane has `plane_size = Nx * Ny * 4` bytes.
     - The file size is `(Nz + 1) * plane_size` bytes.
     - **Block 0** (`bytes[0 : plane_size]`): Header metadata block.
@@ -253,4 +279,4 @@ Generated when running `FOURIER` (e.g., Difference Fourier $\Delta\rho(\mathbf{r
       grid[:, :, z] = np.array(floats).reshape((Nx, Ny), order='F')
       ```
 - **Units**: For neutron diffraction (`formtab -62`), $\Delta\rho$ is in $\text{fm/\AA}^3$. Background RMS noise is $\sigma_{\text{RMS}} = \sqrt{\langle \Delta\rho^2 \rangle}$.
-- Use [scripts/analyze_fourier_m81.py](../scripts/analyze_fourier_m81.py) to automatically determine/verify grid dimensions, interpolate $\Delta\rho$ at candidate Wyckoff sites, and plot 2D contour maps.
+- Use [scripts/analyze_fourier_m81.py](../scripts/analyze_fourier_m81.py) with `--nx`, `--ny` and `--nz` from the listing. The helper reports density in native map units. Supply `--site Label=x,y,z` to probe fractional coordinates and `--z-slice` when requesting a PNG.
