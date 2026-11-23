@@ -28,6 +28,29 @@ design rank, sparse tails and confounding. At fixed d, lambda=2d sin(theta): cha
 wavelength changes scattering angle, so angle and wavelength are not independent
 causes. Apparent common curves do not prove all reflections respond identically.
 Bootstrap at family level; label linearized bootstrap intervals as approximate.
+
+## Suspect observations and detector edges
+
+- Join listing residuals to the source observations using verified unique tags.
+  Check signed indices and, where available, wavelength, detector position,
+  resolution, and scale or run identifiers. Inspect standardized residuals
+  together with the intensity uncertainties and symmetry-equivalent repeats.
+  Repeated disagreement can indicate measurement systematics or a model
+  deficiency. A large residual alone does not establish which is responsible.
+- A detector-edge distance rule flags candidates for inspection. Check where
+  the actual peak and background integration apertures fall relative to the
+  active detector area, masks, gaps, and dead channels. Inspect coverage and
+  compare with equivalent measurements away from edges. Center positions alone
+  cannot establish whether the integration aperture was clipped. If the
+  aperture or mask is unavailable, label an edge screen as a sensitivity
+  selection and record the evidence that is missing.
+- Preserve the full-data fit and record each omission by native tag, source
+  identity, and reason. Report the selection and changes in coverage, counts
+  and scale-group support for each relevant reflection class. Compare the
+  original model evaluated on the retained tags with a refit on those same
+  tags, using the same weights and reporting threshold. Also report the
+  full-data result. This distinguishes the effect of changing the observation
+  set from changes in the fitted model.
 Do not promote an exploratory response fit into a data correction without validation.
 
 ## Multiple diffraction / Renninger screening
