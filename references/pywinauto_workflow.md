@@ -21,6 +21,24 @@ In the tested Codex session a sandboxed shell saw zero desktop windows, while an
 
 Use short scripts and output only relevant titles, control identifiers, and result summaries. If control metadata is insufficient, request explicit image-viewing authorization before inspecting any screenshot. Generating a figure or operating a GUI does not authorize image review. Preserve each trial in its own directory before running.
 
+## Magnetic CIF export
+
+In a build with `CIF utilities → MCIF for BCS`, verify the active magnetic
+trial before invoking that command. Preserve its native mCIF. Check the cell,
+formula and multiplicities, explicit magnetic operations and time-reversal
+signs, site moments, ADPs, and any domain matrices and fractions. Jana can
+leave a symbol unresolved or retain a parent group number in a nonstandard
+setting. Establish the magnetic setting from the explicit operations.
+
+If a standard-setting copy is needed, verify the basis and origin
+transformation against the complete magnetic operation set, including
+centering. Check that the expanded positions and Cartesian moments agree
+modulo lattice translations, the transformed tensors give the same physical
+displacements, and domain matrices describe the same physical rotations.
+Check cell volume and multiplicities after any change of centering. Carry
+transformed standard uncertainties where the necessary covariance is available
+and disclose omissions in the standard-setting copy.
+
 ## Observed errors and limits
 
 - `Incorrect flag for atomic type (=0)` was resolved by fixing the `.m40` ten-character atom-name field; the type index must immediately follow it.
