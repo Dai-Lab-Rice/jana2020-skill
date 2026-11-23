@@ -9,16 +9,16 @@ Allows agents and scripts to safely modify:
   - Extinction directive (iext) and constraint equations inside .m50
 
 Usage Examples:
-  # Set Te1 flag to refine occ + aniso ADPs, and clear all equations in .m50
-  C:\\Users\\hplfz\\miniconda3\\python.exe edit_jana_files.py path/to/Project \\
-      --set-flag Te1=1000101000 --set-flag Li1=1001100000 --clear-equations
+  # Set B1 flag to refine occ + aniso ADPs, and clear all equations in .m50
+  python edit_jana_files.py path/to/Project \\
+      --set-flag B1=1000101000 --set-flag D1=1001100000 --clear-equations
 
   # Set substitutional equation on 2a site
-  C:\\Users\\hplfz\\miniconda3\\python.exe edit_jana_files.py path/to/Project \\
-      --set-flag Mn1=1000101000 --set-flag Li1=0000000000 --clear-equations \\
-      --add-equation "occ[Li1]=0.083333-occ[Mn1]" \\
-      --add-equation "u11[Li1]=u11[Mn1]" \\
-      --add-equation "u33[Li1]=u33[Mn1]"
+  python edit_jana_files.py path/to/Project \\
+      --set-flag A1=1000101000 --set-flag D1=0000000000 --clear-equations \\
+      --add-equation "occ[D1]=0.083333-occ[A1]" \\
+      --add-equation "u11[D1]=u11[A1]" \\
+      --add-equation "u33[D1]=u33[A1]"
 """
 
 import argparse
@@ -115,13 +115,13 @@ def validate_m50(lines):
 def main():
     parser = argparse.ArgumentParser(description="Programmatically modify Jana2020 .m40 and .m50 files.")
     parser.add_argument("project", help="Project base path (with or without .m40/.m50 extension).")
-    parser.add_argument("--set-flag", action="append", default=[], help="Atom=10DigitFlag (e.g. Te1=1000101000).")
-    parser.add_argument("--set-occ", action="append", default=[], help="Atom=CrystallographicAi (e.g. Li1=0.002500).")
-    parser.add_argument("--set-pos", action="append", default=[], help="Atom=x,y,z (e.g. Li1=0.333333,0.666667,0.750000).")
+    parser.add_argument("--set-flag", action="append", default=[], help="Atom=10DigitFlag (e.g. B1=1000101000).")
+    parser.add_argument("--set-occ", action="append", default=[], help="Atom=CrystallographicAi (e.g. D1=0.002500).")
+    parser.add_argument("--set-pos", action="append", default=[], help="Atom=x,y,z (e.g. D1=0.333333,0.666667,0.750000).")
     parser.add_argument("--ext-flag", default=None, help="6-digit extinction flag on Line 5 of .m40 (e.g. 100000 or 000000).")
     parser.add_argument("--iext", type=int, choices=[0, 1, 2], default=None, help="Set iext mode in .m50 (0=off, 1=iso BC, 2=aniso BC).")
     parser.add_argument("--clear-equations", action="store_true", help="Remove all equation lines in .m50.")
-    parser.add_argument("--add-equation", action="append", default=[], help="Add an equation line to .m50 (e.g. 'occ[Li1]=0.083333-occ[Mn1]').")
+    parser.add_argument("--add-equation", action="append", default=[], help="Add an equation line to .m50 (e.g. 'occ[D1]=0.083333-occ[A1]').")
     args = parser.parse_args()
 
     base = os.path.splitext(args.project)[0] if args.project.endswith(('.m40', '.m50', '.ref')) else args.project

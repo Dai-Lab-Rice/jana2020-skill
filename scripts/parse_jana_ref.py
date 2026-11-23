@@ -8,7 +8,7 @@ atomic occupancies, coordinates, and ADPs with standard uncertainties (handling
 the 5-token s.u. block offset in .m40).
 
 Usage:
-  C:\\Users\\hplfz\\miniconda3\\python.exe parse_jana_ref.py <path_to_dir_or_ref> [--mult 12.0]
+  python parse_jana_ref.py <path_to_dir_or_ref> [--mult SITE_MULTIPLIER]
 """
 
 import argparse

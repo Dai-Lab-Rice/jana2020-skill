@@ -1,6 +1,6 @@
 Version Jana2020
-title MnTe_340K_Template
-cell 4.1522 4.1522 6.7162 90 90 120
+title Legacy_single_scale_example
+cell 4.2000 4.2000 6.8000 90 90 120
 esdcell 0.0005 0.0005 0.0011 0 0 0
 spgroup P63/mmc 194 6
 lattice P
@@ -29,10 +29,10 @@ symmetry y x z+1/2
 symmetry x-y -y z+1/2
 symmetry -x -x+y z+1/2
 unitsnumb 2
-atlist Mn Te
+atlist Si Ge
 formtab -62
-atom Mn atradius 1.37 color 168008158 donor 0 acceptor 0
-atom Te atradius 1.37 color 173162081 donor 0 acceptor 0
+atom Si atradius 1.37 color 168008158 donor 0 acceptor 0
+atom Ge atradius 1.37 color 173162081 donor 0 acceptor 0
 roundmethod 1 autrefkeys 1
 end
 *******************************************************************************

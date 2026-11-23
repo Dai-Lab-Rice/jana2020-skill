@@ -7,13 +7,14 @@ This reference documents critical numerical, GUI, and physical pitfalls encounte
 ## Pitfall 1: GUI In-Memory State Caching (Stale Equations & Extinction Settings)
 
 ### Symptom
-You remove an `equation : ...` line from `.m50` on disk (for example, transitioning from a substitutional model on site $2a$ where `occ[Li1]=0.083333-occ[Mn1]` to an unconstrained interstitial model on site $2d$ where `Mn1` is fixed at `0.083333`), and set `Li1`'s refinement flag in `.m40` to `1000000000`. The user clicks `Refinement -> Run refinement` in Jana2020, and `occ[Li1]` immediately jumps to `0.000000` with its refinement flag reset to `0000000000`!
-
+You remove an occupancy equation from `.m50` and free the dependent
+atom's occupancy in `.m40`. After clicking `Refinement -> Run refinement`,
+Jana restores the old equation or changes the initial occupancy and flags.
 ### Root Cause
-While a project remains open in the Jana2020 GUI, Jana holds its `refine` command treeâ€”especially **user equations** and **extinction flags**â€”in RAM. Clicking `Refinement -> Run refinement` does **not** re-read `.m50` from disk; instead, Jana writes its in-memory equations back out to `.ref` and `.m50` before starting `REFINE`.
+While a project remains open in the Jana2020 GUI, Jana holds its `refine` command tree—especially **user equations** and **extinction flags**—in RAM. Clicking `Refinement -> Run refinement` does **not** re-read `.m50` from disk; instead, Jana writes its in-memory equations back out to `.ref` and `.m50` before starting `REFINE`.
 In `.ref`, you will see:
 ```text
-=>equation : occ[Li1]=0.083333-occ[Mn1]<=
+=>equation : occ[D1]=0.083333-occ[A1]<=
   ... the equation not fulfilled, the initial value has been changed : 0.002500 => 0.000000
 ```
 
@@ -23,12 +24,13 @@ In `.ref`, you will see:
 
 ---
 
-## Pitfall 2: Scaleâ€“Sublattice Occupancy Singularity & The Circular Fit Trap
+## Pitfall 2: Scale–Sublattice Occupancy Singularity & The Circular Fit Trap
 
 ### Symptom
-In a binary crystal $AB$ (or pseudo-binary $(A_{1-x}D_x)B$), you flag the overall scale factor $K$, the cation site occupancy (`occ[Mn1]` with `occ[Li1] = 0.083333 - occ[Mn1]`), **and** the anion site occupancy (`occ[Te1]`) to refine simultaneously.
-The refinement converges quickly and reports your expected numbers, e.g., $\text{Li} = 3.0(7)\%$ and $\text{Te} = 0.947$.
-
+In a binary structure with substitution on one site, you simultaneously
+refine the overall scale, the substitution fraction, and occupancy of the
+other sublattice. The refinement can converge even when the parameters
+are underdetermined.
 ### Why This Is a Circular Trap
 Look at the bottom of `<project>.ref`:
 ```text
@@ -36,9 +38,9 @@ Look at the bottom of `<project>.ref`:
 * List of parameters blocked due to singularity *
 *************************************************
 In the cycle #1 there was one singularity:
-   element #6 : occ[Te1]
+   element #6 : occ[B1]
 ```
-And in the `.m40` `s.u. block`, `Te1` has an unphysical s.u. (such as `3.879057`) or `0.000000` in `.ref`!
+And in the `.m40` `s.u. block`, `B1` has an unphysical s.u. (such as `3.879057`) or `0.000000` in `.ref`!
 
 ### Identifiability
 
@@ -55,37 +57,32 @@ Use justified site-sum/composition constraints or additional independent contras
 ## Pitfall 3: Co-Located Substitutional Singularity ($r = -1.000$ Correlation)
 
 ### Symptom
-Two atoms (`Mn1` and `Li1`) occupy the **exact same coordinates** $(0, 0, 0)$ with equal ADPs ($U_{ij}(\text{Li1}) = U_{ij}(\text{Mn1})$), and you allow **both** `occ[Mn1]` and `occ[Li1]` to refine freely without a sum equation (`occ[Mn1] + occ[Li1] = 1`).
+Two species occupy the same site with identical ADPs. If both
+crystallographic occupancies are free and the neutron scattering lengths
+are real and constant, their structure-factor derivatives are proportional.
+For nonzero $b_A$,
 
-### What Happens in Jana2020
-Because $\mathbf{r}_{\text{Mn}} = \mathbf{r}_{\text{Li}}$ and $W_{\text{Mn}}(\mathbf{h}) = W_{\text{Li}}(\mathbf{h})$, their partial derivatives with respect to the structure factor $F(\mathbf{h})$ are strictly proportional for **every** reflection $(h, k, l)$:
-$$\frac{\partial F(\mathbf{h})}{\partial \text{occ}(\text{Li})} = \frac{b_{\text{Li}}}{b_{\text{Mn}}} \frac{\partial F(\mathbf{h})}{\partial \text{occ}(\text{Mn})}$$
-In `<project>.ref`, Jana reports:
-```text
-In the cycle #1 there was one singularity: element #8 : occ[Li1]
--1.000 correlation : occ[Mn1]/occ[Li1]
-```
-The individual occupancies drift to arbitrary numbers with $>100\%$ error bars (e.g., $\text{Mn} = 0.67 \pm 1.26$, $\text{Li} = 0.73 \pm 2.47$), while their **effective site scattering length** remains strictly invariant:
-$$b_{\text{site}} = \text{occ}(\text{Mn}) \cdot b_{\text{Mn}} + \text{occ}(\text{Li}) \cdot b_{\text{Li}} = \text{constant}$$
-- **Rule**: Co-located atoms on the same Wyckoff site **cannot** have both occupancies refined independently from single-wavelength/TOF neutron Bragg intensities without a total site occupancy constraint (`equation : occ[B] = max_occ - occ[A]`).
+$$\frac{\partial F(\mathbf{h})}{\partial a_B} = \frac{b_B}{b_A}\frac{\partial F(\mathbf{h})}{\partial a_A}.$$
+
+A Jana listing can report a blocked parameter or a correlation near $\pm1$.
+The diffraction model determines the weighted site contribution
+$a_A b_A + a_B b_B$. A justified chemistry constraint can fix the
+total crystallographic occupancy to $M_{\text{site}}/N_{\text{sym}}$ for a
+fully occupied site. Independent contrast can also help resolve the species.
 
 ---
 
 ## Pitfall 4: Negative Neutron Scattering Lengths ($b_c < 0$) in Antisite & Fourier Analysis
 
-Unlike X-ray atomic form factors ($f(s) > 0$, proportional to $Z$), neutron coherent scattering lengths $b_c$ can be **negative** (a $180^\circ$ phase shift in scattered neutron waves):
-- $b_{\text{Mn}} = \mathbf{-3.73\text{ fm}}$ (negative)
-- $b_{\text{Li}} = \mathbf{-1.90\text{ fm}}$ (negative)
-- $b_{\text{Te}} = \mathbf{+5.80\text{ fm}}$ (positive)
+Neutron coherent scattering lengths can have either sign. In a
+difference Fourier map with $\Delta\rho = \rho_{\text{obs}} - \rho_{\text{calc}}$,
+a missing positive scatterer can produce a positive peak and a missing
+negative scatterer can produce a negative peak. Inspect both extrema and
+check the scattering table used for the current isotope composition.
 
-This has two major consequences in Jana2020 refinements:
-
-### 1. Difference Fourier Maps ($\Delta\rho = \rho_{\text{obs}} - \rho_{\text{calc}}$)
-- A **missing positive scatterer** (like Te) appears as a **positive peak** ($+\Delta\rho > 0$) in `.fou` / `.m81`.
-- A **missing negative scatterer** (such as interstitial $\text{Mn}_i$ or $\text{Li}_i$ in an empty Wyckoff hole) appears as a **deep negative well** ($-\Delta\rho < 0$)!
-- When inspecting `.m81` for interstitial Mn or Li, always search for the **deepest minima ($\Delta\rho_{\min}$)** as well as maxima!
-
-### 2. Antisite Defect Refinements ($\text{Te}_{\text{Mn}}$ vs. $\text{Mn}_{\text{Te}}$)
-- Substituting Te ($+5.80\text{ fm}$) onto a Mn site ($-3.73\text{ fm}$) produces an enormous contrast change of $\Delta b = +9.53\text{ fm}$ per atom:
-  $$b_{\text{site}}(2a) = (1 - x)(-3.73) + x(+5.80) = -3.73 + 9.53 x$$
-- If the experimental diffraction data requires the cation sublattice to have *more* negative scattering power relative to Te (e.g., $b_{\text{site}} = -3.87\text{ fm}$ due to interstitial Mn or Te deficiency), a $\text{Te}_{\text{Mn}}$ antisite model (`equation : occ[Te2]=0.083333-occ[Mn1]`) will refine $x$ to a **statistically significant negative occupancy** (e.g. $x = -1.44(14)\%$, $-10.4\sigma$). A negative refined occupancy under a valid site-sum constraint is incompatible with that constrained model under its assumptions. Investigate systematic errors, weighting, contrast and model misspecification before claiming a physical defect has been definitively excluded.
+For substitution of species $B$ onto a site occupied by $A$ with total site
+occupancy fixed, the mean scattering length is $b_A + x(b_B-b_A)$, where $x$
+is the substitution fraction. Use the sign and magnitude of $b_B-b_A$ to
+compare candidate defects. A negative refined fraction is outside the
+physical range of the constrained model. Check systematic errors,
+weighting, and alternative explanations before interpreting it.
