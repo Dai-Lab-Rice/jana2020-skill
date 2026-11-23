@@ -3,7 +3,8 @@ name: jana2020-skill
 description: >-
   Set up, automate and diagnose Jana2020/Jana2006 single-crystal X-ray and
   TOF neutron refinements, including reflection imports, native parameter
-  files, joint datasets, occupancy constraints, extinction and Fourier maps.
+  files, joint datasets, magnetic structures, occupancy constraints, extinction
+  and Fourier maps.
 ---
 
 # Jana2020 refinement
@@ -36,7 +37,9 @@ Read [Windows workflow](references/pywinauto_workflow.md) before GUI control.
 
 Read [joint datasets and corrections](references/joint_and_corrections.md) for
 co-refinement, absorption or extinction. Read [measurement diagnostics](references/measurement_diagnostics.md)
-for repeated intensities, wavelength effects or multiple diffraction.
+for repeated intensities, wavelength effects, outliers or multiple diffraction.
+Read [magnetic refinement](references/magnetic_refinement.md) for satellite
+imports, propagation vectors, magnetic model comparisons or joint refinements.
 Read [identifiability and pitfalls](references/crystallographic_pitfalls.md) for defects and Fourier interpretation.
 
 Honor the user's image-review boundary: generate/export figures for review, but
